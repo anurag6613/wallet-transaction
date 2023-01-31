@@ -1,13 +1,14 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_crypto/data/repo/wallet_connector.dart';
 import 'package:http/http.dart';
 import 'package:walletconnect_dart/walletconnect_dart.dart';
 import 'package:walletconnect_qrcode_modal_dart/walletconnect_qrcode_modal_dart.dart';
 import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
-import 'package:flutter/services.dart';
 
 class WalletConnectEthereumCredentials extends CustomTransactionSender {
   WalletConnectEthereumCredentials({required this.provider});
@@ -85,33 +86,58 @@ class EthereumConnector implements WalletConnector {
     required String recipientAddress,
     required double amount,
   }) async {
+    print("test");
+    print(_connector.connector.session.accounts[0]);
     final sender =
         EthereumAddress.fromHex(_connector.connector.session.accounts[0]);
-    final recipient = EthereumAddress.fromHex(address);
+    final recipient =
+        EthereumAddress.fromHex("0xa154d2a02181942aAfDEEC87B04c4cF60e49B04b");
+    print(recipient);
+    print(recipientAddress);
 
-    final etherAmount = EtherAmount.fromUnitAndValue(
-        EtherUnit.szabo, (amount * 1000 * 1000).toInt());
+    final etherAmount = BigInt.one;
+    // EtherAmount.fromUnitAndValue(EtherUnit.wei, BigInt.one);
+    DeployedContract contract = await loadContract();
+    final ethFunction = contract.function("transfer");
 
-    final transaction = Transaction(
-      to: recipient,
-      from: sender,
-      gasPrice: EtherAmount.inWei(BigInt.one),
-      maxGas: 100000,
-      value: etherAmount,
-    );
-
+    // final transaction = Transaction(
+    //   to: recipient,
+    //   from: sender,
+    //   // gasPrice: EtherAmount.inWei(BigInt.one),
+    //   maxGas: 100000,
+    //   value: etherAmount,
+    // );
+    final transaction = Transaction.callContract(
+        from: sender,
+        // gasPrice: EtherAmount.inWei(BigInt.one),
+        // maxGas: 100000,
+        // value: etherAmount,
+        contract: contract,
+        function: ethFunction,
+        parameters: [recipient, etherAmount]);
+// final credentials = await EthPrivateKey.fromHex(
+//         "33ef6d7ce056743c6b98b08c8e7791d7efca4d505b7f97142f75626cacd4c2e2");
     final credentials = WalletConnectEthereumCredentials(provider: _provider);
 
-    try {
-      final txBytes = await _ethereum.sendTransaction(credentials, transaction);
-      return txBytes;
-    } catch (e) {
-      print('Error: $e');
-    }
+    // try {
+    //   final txBytes = await _ethereum.sendTransaction(credentials, transaction);
+    //   return txBytes;
+    // } catch (e) {
+    //   print('Error: $e');
+    // }
 
-    _connector.killSession();
+    // _connector.killSession();
 
-    return null;
+    // return null;
+    var result = await _ethereum.sendTransaction(credentials, transaction
+        // Transaction.callContract(
+        //   contract: contract,
+        //   function: ethFunction,
+        //   parameters: [recipient, etherAmount],
+        // ),
+        );
+    print(result);
+    return result;
   }
 
   @override
@@ -125,29 +151,14 @@ class EthereumConnector implements WalletConnector {
     return amount.getValueInUnit(EtherUnit.ether).toDouble();
   }
 
-  Future<String> transaction() async {
-    final address =
-        EthereumAddress.fromHex(_connector.connector.session.accounts[0]);
-    final contract = await loadContract();
-    final response = _ethereum
-        .call(
-            contract: contract,
-            function: contract.function("safeMint"),
-            params: [
-              {"kind": 0},
-              {"batchId": 0},
-              {"tierId": 0},
-              {"amount": 0},
-              {"mintAmount": 1},
-              {"uri": "uri"},
-              {"swapToken": "0x0000000000000000000000000000000000000000"},
-              {"to": "receiverAddress"},
-              {"target": contract},
-              {"proof": []},
-            ],
-            sender: address)
-        .toString();
-    return response;
+  @override
+  Future<DeployedContract> loadContract() async {
+    String abi = await rootBundle.loadString("assets/abi1.json");
+    String contractAddress = "0x39F8B9F624D36aeEC009F5497edB9eE9bCB63a0D";
+
+    final contract = DeployedContract(ContractAbi.fromJson(abi, "ERC20"),
+        EthereumAddress.fromHex(contractAddress));
+    return contract;
   }
 
   @override
@@ -164,29 +175,12 @@ class EthereumConnector implements WalletConnector {
   String get faucetUrl => 'https://faucet.dimensions.network/';
 
   @override
-  String get address => "0xa8dd2882C1eDbCC8a840c69f21E062eeC2D3973D";
+  String get address => _connector.connector.session.accounts[0];
 
   @override
-  String get coinName => 'Eth';
+  String get coinName => 'MATIC';
 
   final _ethereum = Web3Client(
       'https://polygon-mumbai.g.alchemy.com/v2/gjTUrSBNjwTwjF6P8L6hM_UFeuSZob70',
       Client());
-
-  Future<DeployedContract> loadContract() async {
-    String abi = await rootBundle.loadString("assets/abi.json");
-    String contractAddress = "contractAddress";
-
-    final contract = DeployedContract(ContractAbi.fromJson(abi, "safeMint"),
-        EthereumAddress.fromHex(contractAddress));
-    return contract;
-  }
-
-  // Future<List<dynamic>> query(String functionName, List<dynamic> args) async {
-  //   final contract = await loadContract();
-  //   final ethFunction = contract.functions(functionName);
-  //   final result = await _ethereum.call(
-  //       contract: contract, function: ethFunction, params: args);
-  //   return result;
-  // }
 }

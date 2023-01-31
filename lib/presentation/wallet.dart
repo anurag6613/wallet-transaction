@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../data/repo/wallet_connector.dart';
+import '../../data/repo/wallet_connector.dart';
 
 enum TransactionState {
   idle,
