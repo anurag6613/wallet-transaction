@@ -91,11 +91,11 @@ class EthereumConnector implements WalletConnector {
     final sender =
         EthereumAddress.fromHex(_connector.connector.session.accounts[0]);
     final recipient =
-        EthereumAddress.fromHex("0xa154d2a02181942aAfDEEC87B04c4cF60e49B04b");
+        EthereumAddress.fromHex("0xa8dd2882C1eDbCC8a840c69f21E062eeC2D3973D");
     print(recipient);
     print(recipientAddress);
 
-    final etherAmount = BigInt.one;
+    final etherAmount = BigInt.two;
     // EtherAmount.fromUnitAndValue(EtherUnit.wei, BigInt.one);
     DeployedContract contract = await loadContract();
     final ethFunction = contract.function("transfer");
