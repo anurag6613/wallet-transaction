@@ -175,7 +175,7 @@ class _WalletPageState extends State<WalletPage> {
 
         Future.delayed(Duration.zero, () => widget.connector.openWalletApp());
 
-        final hash = await widget.connector.sendAmount(
+        final hash = await widget.connector.mintNFT(
             recipientAddress: addressController.text,
             amount: double.parse(amountController.text));
 

@@ -8,6 +8,10 @@ abstract class WalletConnector {
     required String recipientAddress,
     required double amount,
   });
+  Future<String?> mintNFT({
+    required String recipientAddress,
+    required double amount,
+  });
 
   Future<void> openWalletApp();
 
